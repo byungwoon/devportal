@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * sears Customizations are implemented.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function sears_custom_install() {
+  //  Set the weight of the module lower so modules like logintobogie don't cause problems.
+  db_query("UPDATE {system} SET weight = 1003 WHERE name = 'sears_custom'");
+}
+function sears_custom_uninstall() {
+  variable_del('default_apiproduct');
+}

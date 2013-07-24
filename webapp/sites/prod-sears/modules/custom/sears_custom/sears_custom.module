@@ -1,0 +1,146 @@
+<?php
+/**
+ *  * @file
+ * Implements hook_variable_info().
+ *
+ * @param array $options
+ *
+ * @return array
+ */
+function sears_custom_variable_info($options) {
+  $variables['default_apiproduct'] = array(
+    'type' => 'string',
+    'title' => t("Devconnect Default ApiProduct"),
+    'description' => t('Add Default ApiProduct name with prefix prod-. e.g prod-apiproduct')
+  );
+  return $variables;
+}
+
+
+/**
+ * Implements hook_form_alter() (http://api.drupal.org/api/drupal/modules!system!system.api.php/function/hook_form_alter/7)
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function sears_custom_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+  case "user_profile_form":
+    $form['field_api_key']['#access'] = FALSE;
+  break;
+  case "user_register_form":
+    $form['field_api_key']['#access'] = FALSE;
+  break;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * When creating a new app, check to see if user has created an app before,
+ * and choose a default API Product based on the result.
+ *
+ * @throws Exception
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function sears_custom_form_devconnect_developer_apps_edit_form_alter(&$form, &$form_state) {
+  global $user;
+  $form['api_product']['#access']=FALSE;
+  $existing_default_apiproduct = $form['api_product']['#default_value'];
+  // Default API Product may contain the empty string. Ignore this.
+  if (!is_array($existing_default_apiproduct)) {
+    $existing_default_apiproduct = NULL;
+  }
+  elseif (($i = array_search('', $existing_default_apiproduct)) !== FALSE) {
+    unset($existing_default_apiproduct[$i]);
+  }
+  // Do not meddle with api_product if we are editing as opposed to creating an app.
+  // Existing apps will have an existing default for this.
+  if (empty($existing_default_apiproduct)) {
+    $form['api_product']['#default_value'] = variable_get('default_apiproduct', NULL);
+  }
+
+  // Override custom attribute feild types
+  $custom_attributes = module_invoke_all('devconnect_app_attributes');
+
+  foreach ($custom_attributes as $machine_name => $attribute) {
+    $options=(array_key_exists('options', $attribute) ? $attribute['options'] : NULL);
+    $form_field_name = 'attribute_' . $machine_name;
+    if ($options) {
+      $form[$form_field_name]['#options'] = $options;
+    }
+  }
+  $form['callback_url']['#access'] = FALSE;
+  $form['callback_url']['#required'] = FALSE;
+}
+
+function sears_custom_devconnect_app_attributes() {
+  //$attributes = variable_get('app_attributes', array());
+
+  $items = array();
+  $items['application_type']   = array(
+      'name'    => t('Application Type'),
+      'type'    => 'radios',
+      'options' => array(
+        'web' => t('Web application'),
+        'desktop'  => t('Desktop client')
+      ),
+      'default' => 'web',
+      'weight' => 8,
+  );
+  $items['access_type']   = array(
+      'name'    => t('Access Type'),
+      'type'    => 'radios',
+      'options' => array(
+        'readonly' => t('Read-only'),
+        'readwrite'  => t('Read-write')
+      ) ,
+       'default' => 'readonly',
+      'weight' => 9,      
+  );
+  return $items;
+}
+/**
+ * Implements hook_user_presave().
+ *
+ * When account is creating creating an app with the same username 
+ * and choose a default API Product based on the result.
+ */
+function sears_custom_user_insert(&$edit, $account, $category) {
+  $uid=$account->uid;
+  $user=user_load($uid);
+  $dc = new DevConnectApigeeDeveloperApp($user);
+  $default_api_product = variable_get('default_apiproduct', NULL);
+  $app_array=array(
+    'machine_name' => $user->name,
+     'callback_url' => '',
+     'attribute_application_type' => 'web',
+    'attribute_access_type' => 'readonly',
+    'api_product' => $default_api_product,
+    'uid' => $uid,
+  );
+  try{
+    $results = $dc->Create($app_array);
+  }
+  catch (Exception $e) {
+    $message = $e->getMessage();
+    watchdog('devconnect_developer_apps', $message, array(), WATCHDOG_ERROR);
+  }
+}
+function sears_custom_mail_alter(&$message) {
+  $to=$message['to'];
+  $uid=$message['params']['account']->uid;
+  $user=user_load($uid);
+  $dc = new DevConnectApigeeDeveloperApp($user);
+  $key=strip_tags(devconnect_developer_apps_detail($user, $user->name));
+  $consumer_key=explode('Consumer Key:', $key);
+  $consumer_key=explode('Consumer Secret Key', $consumer_key[1]);
+  $consumer_key=trim($consumer_key[0]);
+  $patterns = array();
+  $patterns[0] = '/{APIKEY}/';
+  $replacements[0] = $consumer_key;
+  $message['body'][0]=preg_replace($patterns, $replacements, $message['body'][0]);
+}
+

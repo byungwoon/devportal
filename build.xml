@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<project name="apigee-drupal-project" default="dc-dev-build" description="Apigee Drupal Build">
+  <!--
+
+        Two types of builds: internal and external build. Internal builds are those who have access to the apigee/drupal-settings repo.
+        External builds are those who do not. Default is an external build. Internal builds will have ${build.type} = internal
+        in their Jenkins default properties.
+
+  ============== To Install Phing  ======================
+  to install phing: sudo sh ./pear-installs.sh
+
+
+  ============== FOR LOCAL DEVELOPMENT  ======================
+        From the command line: phing apigee-drupal -Dbuild.type=local
+
+
+
+        -->
+  <property name="build.type" value="external" override="false" />
+  <property name="s3cmd" value="/usr/bin/s3cmd" override="false" />
+  <target name='init'>
+    <echo>-------------------------------------------------</echo>
+    <echo>=&gt; cloning latest drupal settings</echo>
+    <echo>-------------------------------------------------</echo>
+    <exec command="which git" outputProperty="git-binary" />
+    <delete dir="drupal-settings" quiet="true" />
+    <delete dir="tasks" quiet="true" />
+    <mkdir dir="tasks" />
+    <exec command="git clone --recursive --branch 7.x-1.x http://git.drupal.org/project/phingdrushtask.git '${project.basedir}/tasks/drush'" logoutput="true" />
+    <if>
+      <or>
+        <equals arg1="${build.type}" arg2="jenkins" />
+        <equals arg1="${build.type}" arg2="internal" />
+      </or>
+      <then>
+        <gitclone repository="git@github.com:apigee/drupal-settings" targetPath="drupal-settings"  gitPath="${git-binary}" />
+      </then>
+    </if>
+    <delete quiet="true" >
+      <fileset dir="${user.home}/.drush">
+        <include name="*alias*" />
+        <include name="cache/**" />
+      </fileset>
+    </delete>
+  </target>
+  <target name="apigee-drupal" depends="init">
+    <echo>-------------------------------------------------</echo>
+    <echo>+++++ Running Phing/Drush build</echo>
+    <echo>-------------------------------------------------</echo>
+    <includepath classpath="tasks" />
+    <taskdef name="drush" classname="drush.DrushTask" />
+    <drush command="cc">
+      <param>drush</param>
+    </drush>
+    <delete dir="${project.basedir}/webapp" verbose="true" failonerror="false" includeemptydirs="true" />
+    <drush command="make" assume="yes">
+      <option name="prepare-install" />
+      <option name="working-copy" />
+      <option name="no-gitinfofile" />
+      <!-- option name="no-cache" /   -->
+      <param>apigee.make</param>
+      <param>webapp</param>
+    </drush>
+  </target>
+  <target name="dc-dev-build" depends="apigee-drupal">
+    <property prefix="dc.dev" file="${project.basedir}/drupal-settings/properties/${PROPERTIES_FILE}" />
+    <if>
+      <or>
+        <equals arg1="${build.type}" arg2="jenkins" />
+        <equals arg1="${build.type}" arg2="internal" />
+      </or>
+      <then>
+        <copy todir="${project.basedir}/webapp/sites" includeemptydirs="true">
+          <fileset dir="${project.basedir}/drupal-settings/sites">
+            <include name="dc-*/**/**" />
+            <include name="sites.php" />
+          </fileset>
+        </copy>
+      </then>
+    </if>
+    <copy file="${project.basedir}/libraries.php" tofile="${project.basedir}/webapp/sites/default/libraries.php" />
+    <delete file="${project.basedir}/webapp/install.php" quiet="true" />
+    <phingcall target="remove-extra-libraries-mod" />
+    <if>
+      <equals arg1="${build.type}" arg2="jenkins" />
+      <then>
+        <phing phingfile="drupal-settings/apigee-storage.xml" target="fix-perms">
+          <property name="root" value="${dc.dev.root}" />
+          <property name="exec" value="${dc.dev.exec}" />
+          <property name="name" value="${dc.dev.name}" />
+        </phing>
+        <echo>===&gt; Moving files</echo>
+        <exec command="sudo chown -R jenkins.jenkins ${dc.dev.root}" />
+        <move file="${dc.dev.root}" todir="/tmp/dc-build-scraps-${BUILD_ID}" includeemptydirs="true" haltonerror="false" />
+        <move file="${project.basedir}/webapp" todir="${dc.dev.container}" includeemptydirs="true" />
+        <phing phingfile="drupal-settings/apigee-storage.xml" target="fix-perms">
+          <property name="root" value="${dc.dev.root}" />
+          <property name="exec" value="${dc.dev.exec}" />
+          <property name="name" value="${dc.dev.name}" />
+        </phing>
+      </then>
+    </if>
+  </target>
+  <!-- marketing and blog builds are in the marketing branch build.xml -->
+  <target name='copy-drush'>
+    <copy todir="${user.home}/.drush" overwrite="true">
+      <fileset dir="drupal-settings/drush">
+        <include name="*.aliases.drushrc.php" />
+      </fileset>
+    </copy>
+  </target>
+  <target name="remove-extra-libraries-mod">
+    <if>
+      <available file="${project.basedir}/webapp/sites/all/modules/libraries" type="dir" />
+      <then>
+        <delete dir="${project.basedir}/webapp/sites/all/modules/libraries" verbose="true" failonerror="true" includeemptydirs="true" />
+      </then>
+    </if>
+    <if>
+      <available file="${project.basedir}/webapp/modules/php" type="dir" />
+      <then>
+        <delete dir="${project.basedir}/webapp/modules/php" verbose="true" failonerror="true" includeemptydirs="true" />
+        <delete dir="${project.basedir}/webapp/modules/update" verbose="true" failonerror="true" includeemptydirs="true" />
+      </then>
+    </if>
+  </target>
+</project>

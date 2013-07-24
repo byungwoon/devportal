@@ -1,0 +1,43 @@
+name = Sears Theme
+description = Sears Specific Theme for Apigee Dev Portal
+core = 7.x
+base theme = apigee_devconnect
+
+regions[header] = 'Top Bar'
+regions[login] = 'Log In'
+regions[search] = 'Search'
+regions[homepage_header]= 'Homepage Header'
+regions[subpage_header]= 'Subpage Header'
+regions[highlighted] = 'Highlighted'
+regions[help] = 'Help'
+regions[content] = 'Content'
+regions[sidebar_first] = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer] = 'Footer'
+
+stylesheets[all][] = css/sears.css
+
+scripts[] = js/NewUtility.js
+scripts[] = js/shcInlineValidation.js
+scripts[] = js/site.js
+scripts[] = js/jquery.cycle.lite.js
+scripts[] = js/hero.js
+
+settings[toggle_name] = 0
+settings[toggle_search] = 1
+settings[header_bg_color] = #f5f5f5
+settings[header_txt_color] = #0092d7
+settings[header_hover_bg_color] = #056BB4
+settings[header_hover_txt_color] = #FFFFFF
+settings[link_color] = #0092d7
+settings[link_hover_color] = #0B4965
+settings[footer_bg_color] = #f5f5f5
+settings[footer_link_color] = #0092d7
+settings[footer_link_hover_color] = #0B4965
+settings[button_background_color] = #96C942
+settings[button_text_color] = #FFFFFF
+settings[code_text_color] = #000000
+
+fonts[google_fonts_api][] = "Open Sans&subset=latin#300"
+fonts[google_fonts_api][] = "Open Sans&subset=latin#600"
+fonts[google_fonts_api][] = "Open Sans&subset=latin#regular"

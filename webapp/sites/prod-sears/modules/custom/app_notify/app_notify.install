@@ -1,0 +1,22 @@
+<?php
+/**
+ * @file
+ * Notifies administrator about new app creation
+ */
+
+/**
+ * Implements hook_install().
+ */
+function app_notify_install() {
+  //  Set the weight of the module lower so modules like logintoboggan don't cause problems.
+  db_query("UPDATE {system} SET weight = 1001 WHERE name = 'app_notify'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function app_notify_uninstall() {
+  variable_del('app_notify_mailto');
+  variable_del('app_notify_user');
+
+}

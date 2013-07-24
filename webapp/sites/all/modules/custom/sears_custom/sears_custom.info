@@ -1,0 +1,7 @@
+name = "Sears Customizations"
+description = "Add new App Form customisations."
+package = "Sears"
+core = 7.x
+
+dependencies[] = devconnect_developer_apps
+dependencies[] = devconnect_admin_notify
