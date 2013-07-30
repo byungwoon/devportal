@@ -7,6 +7,13 @@
  *
  * @return array
  */
+if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
+	define('DEVCONNECT_ADMIN_NOTIFY_SUBJECT', t('Account details for !user_name at !site'));
+}
+
+if (!defined('DEVCONNECT_ADMIN_NOTIFY_BODY')) {
+	define('DEVCONNECT_ADMIN_NOTIFY_BODY', t("!user_name (!user_view) has !action account.\n\nEdit user: !user_edit\n\nDelete User: !user_delete\n\nUser Status: !approved\n\n"));
+}
 function sears_custom_variable_info($options) {
   $variables['default_apiproduct'] = array(
     'type' => 'string',
@@ -16,6 +23,18 @@ function sears_custom_variable_info($options) {
   return $variables;
 }
 
+
+/**
+ * Implements hook_init().
+ */
+function sears_custom_init() {
+  if (variable_get('default_apiproduct', '')) {
+	drupal_add_css('div.form-item-api-product{display:none;}', array(
+	'group' => CSS_THEME,
+	'type' => 'inline'
+			));
+  }
+}
 
 /**
  * Implements hook_form_alter() (http://api.drupal.org/api/drupal/modules!system!system.api.php/function/hook_form_alter/7)
@@ -48,6 +67,7 @@ function sears_custom_form_alter(&$form, &$form_state, $form_id) {
 function sears_custom_form_devconnect_developer_apps_edit_form_alter(&$form, &$form_state) {
   global $user;
 
+
   if (isset($form['existing_machine_name'])) {
       drupal_set_title('Edit your Application');
       $form['actions']['submit']['#value'] = 'Save Application';
@@ -65,6 +85,7 @@ function sears_custom_form_devconnect_developer_apps_edit_form_alter(&$form, &$f
   );
   
   $form['api_product']['#access']=FALSE;
+
   $existing_default_apiproduct = $form['api_product']['#default_value'];
   // Default API Product may contain the empty string. Ignore this.
   if (!is_array($existing_default_apiproduct)) {
@@ -159,16 +180,17 @@ function sears_custom_user_insert(&$edit, $account, $category) {
   );
   try{
     $results = $dc->Create($app_array);
-  }
-  catch (Exception $e) {
-    $message = $e->getMessage();
-    watchdog('devconnect_developer_apps', $message, array(), WATCHDOG_ERROR);
+  }catch (Exception $e) {
+  	$message = $e->getMessage();
+  	watchdog('devconnect_developer_apps', $message, array(), WATCHDOG_ERROR);
   }
 }
 function sears_custom_mail_alter(&$message) {
+ if ($message['id']=='user_status_activated'){
   $to=$message['to'];
   $uid=$message['params']['account']->uid;
   $user=user_load($uid);
+  $params = $message['params'];
   $dc = new DevConnectApigeeDeveloperApp($user);
   $key=strip_tags(devconnect_developer_apps_detail($user, $user->name));
   $consumer_key=explode('Consumer Key:', $key);
@@ -178,43 +200,157 @@ function sears_custom_mail_alter(&$message) {
   $patterns[0] = '/{APIKEY}/';
   $replacements[0] = $consumer_key;
   $message['body'][0]=preg_replace($patterns, $replacements, $message['body'][0]);
+ }
+ if ($message['id']=='user_register_pending_approval_admin'){
+ 	$message['body'] = array();
+ 	$params = $message['params'];
+ 	$uaccount = $params['account'];
+ 	$action = 'applied for an account';
+ 	$variables = _sears_admin_notify_get_variables($uaccount, $action);	
+ 	$message['subject'] = t(variable_get('devconnect_admin_notify_subject', DEVCONNECT_ADMIN_NOTIFY_SUBJECT), $variables);
+ 	$body = t(variable_get('devconnect_admin_notify_body', DEVCONNECT_ADMIN_NOTIFY_BODY), $variables);
+ 	$message['body'] [] = token_replace($body, array('user' => $uaccount));
+ }
+ 
+
+}
+/**
+* Implements hook_devconnect_user_save
+* If the gateway comunication is failed rollback account creation
+* @param $results
+* @param $edit
+* @param $account
+*
+*/
+function sears_custom_devconnect_user_save($results, &$edit, $account) {
+  if ( (user_is_anonymous()) && ($results['code']!=201) ) {
+    watchdog('sears_register_error', "<pre> Unable to process registeration request for $account->mail. $account->mail try to submit the following data<br>" . print_r($account, TRUE) , array(), WATCHDOG_ERROR);
+    drupal_set_message( t("An error occurred while processing your request and did not submitted the data. Please try again later") , 'error' , FALSE);
+    drupal_goto(current_path() );
+    exit();
+  }
+}
+/**
+*
+* implements hook_block_info
+*
+*/
+function sears_custom_block_info() {    
+  $blocks['blog_login'] = array(
+    // info: The name of the block.
+    'info' => t('Login blog'),
+  );
+   $blocks['forum_login'] = array(
+    // info: The name of the block.
+    'info' => t('Login forum'),
+  );
+  $blocks['blog_subscribe'] = array(
+    // info: The name of the block.
+    'info' => t('blog subscribe'),
+  );
+
+
+  return $blocks;
+}
+function sears_custom_block_view($delta = '') {
+  global $user;
+  switch ($delta) {
+    case 'blog_login':
+      // Create your block content here
+      if ($user->uid==0) {
+        $block['subject'] = t('Sign In To Comment');
+        $block['content'] = "You are not currently signed in [ <a href='/user/login'>Sign In </a>]";
+    }else{
+
+      $block['content'] = "You are currently signed in [ <a href='/user/logout'>Sign Out </a> ]";
+    }
+      break;
+    case 'forum_login':
+    if ($user->uid==0) {
+        $block['subject'] = '';
+        $block['content'] = "<a href='/user/login'>Sign In To Post New Topic </a>";
+    }else{
+
+      $block['content'] = "<a href='/node/add/forum'>Add A Forum Post</a> ";
+    }
+    break;
+    case 'blog_subscribe':
+      $url=$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+      $block['subject'] = '';
+      $block['content'] = "<p><b>Subscribe to this Blog</b></p><a href=https://delicious.com/save?url=$url target='_blank'><img alt='Delicious' src=http://w.sharethis.com/images/delicious_16.png></a> <a href=http://www.stumbleupon.com/submit?url=$url target='_blank'><img alt='Delicious' src='http://w.sharethis.com/images/stumbleupon_16.png'></a> <a href=https://ssl.reddit.com/login?dest=$url target='_blank'><img alt='Stumble Upon' src='http://w.sharethis.com/images/reddit_16.png'></a> <a href=http://digg.com/submit?phase=2&amp;url=$url target='_blank'><img alt='Digg' src=http://w.sharethis.com/images/digg_16.png></a> <a href=https://twitter.com/intent/tweet?url=$url><img alt='Reddit' src=http://w.sharethis.com/images/twitter_16.png></a> <a href=https://www.facebook.com/sharer/sharer.php?u=$url target='_blank'><img alt='Twitter' src=http://w.sharethis.com/images/facebook_16.png></a></div>";
+    break;
+  }
+
+  return $block;
+}
+/**
+ * Generates the token values used in the mail.
+ *
+ * @param stdClass $uaccount
+ * @param string $action
+ * @return array
+ */
+function _sears_admin_notify_get_variables($uaccount, $action) {
+	global $base_url;
+	$variables['!user_name'] = isset($uaccount->realname) ? $uaccount->realname : $uaccount->name;
+	$variables['!user_mail'] = $uaccount->mail;
+	$variables['!user_view'] = url('user/' . $uaccount->uid, array('absolute' => TRUE));
+	$variables['!user_edit'] = url('user/' . $uaccount->uid . '/edit', array('absolute' => TRUE));
+	$variables['!user_delete'] = url('user/' . $uaccount->uid . '/delete', array('absolute' => TRUE));
+	$variables['!approved'] = $uaccount->status ? 'approved' : 'blocked';
+	$variables['!site'] = variable_get('site_name', 'Drupal');
+	$variables['!user_uid'] = $uaccount->uid;
+	$variables['!uri'] = $base_url;
+	$variables['!uri_brief'] = drupal_substr($base_url, drupal_strlen('http://'));
+	$variables['!date'] = format_date(REQUEST_TIME);
+	$variables['!action'] = check_plain($action);
+	$variables['!user_first_name'] = $uaccount->field_first_name[LANGUAGE_NONE][0]['value'];
+	$variables['!user_last_name'] = $uaccount->field_last_name[LANGUAGE_NONE][0]['value'];
+	$variables['!user_company'] = $uaccount->field_company_name[LANGUAGE_NONE][0]['value'];
+	$variables['!user_company_url'] = $uaccount->field_company_site_url[LANGUAGE_NONE][0]['value'];
+	return $variables;
 }
 
 
 
-// function sears_custom_form_user_register_form_alter(&$form, &$form_state, $form_id) {
-//     drupal_set_title('Account Registration');     
-//     
-//     $form['intro_text'] = array(
-//       '#markup' => '<p>Your account will be active within 24-48 hours of registration and an API key will be issued to you upon approval. </p><h2>Tell us about yourself</h2>',
-//       '#weight' => -99
-//     );    
-//     
-//     $form['account']['mail'] = array();
-//     $form['account']['mail']['#weight'] = -96;
-//     
-//     $form['field_company_name']['#weight'] = -95;
-//     
-//     $form['mail'] = array(
-//         '#type'     => 'textfield',
-//         '#title'    => 'E-mail Address',
-//         '#maxlength'=> 254,
-//         '#description' => null,
-//         '#required' => 1,
-//         '#default_value' => null,
-//         '#weight'   => -96
-//     );
-//        
-//     $form['account']['intro_text'] = array(
-//       '#markup' => '<h2>Your Username and Password</h2>',
-//       '#weight' => -11
-//     );    
-//     
-//     $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'terms-use');
-//     
-//     $form['actions']['submit']['#value'] = 'Register';
-//     
-//     // print("<pre>");
-//     // print_r($form);
-//     // print("</pre>");
-// }
+
+function sears_custom_form_user_register_form_alter(&$form, &$form_state, $form_id) {
+    drupal_set_title('Account Registration');     
+    
+    $form['intro_text'] = array(
+      '#markup' => '<p>Your account will be active within 24-48 hours of registration and an API key will be issued to you upon approval. </p><h2>Tell us about yourself</h2>',
+      '#weight' => -99
+    );    
+    
+    $form['account']['mail'] = array();
+    $form['account']['mail']['#weight'] = -96;
+    
+    $form['field_company_name']['#weight'] = -95;
+    
+    $form['mail'] = array(
+        '#type'     => 'textfield',
+        '#title'    => 'E-mail Address',
+        '#maxlength'=> 254,
+        '#description' => null,
+        '#required' => 1,
+        '#default_value' => null,
+        '#weight'   => -96
+    );
+       
+    $form['account']['intro_text'] = array(
+      '#markup' => '<h2>Your Username and Password</h2>',
+      '#weight' => -11
+    );    
+    
+    $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'http://www.sears.com/cstermsofservice/nb-100000000022530', array(
+        'attributes' => array(
+            'target' => '_blank'
+        ),
+    ));
+    
+    $form['actions']['submit']['#value'] = 'Register';
+    
+    // print("<pre>");
+    // print_r($form);
+    // print("</pre>");
+}

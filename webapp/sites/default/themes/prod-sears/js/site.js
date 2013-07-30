@@ -17,8 +17,4 @@ jQuery( document ).ready(function($) {
         }
     });
 
-    $('.form-text').addClass('shcForm_Text');
-    $('input[type=password]').addClass('shcPassword');
-    $('#edit-field-contact-phone-number-und-0-value').addClass('shcPhone');
-    $('#edit-mail').addClass('shcEmail');
 });    

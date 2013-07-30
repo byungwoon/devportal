@@ -40,6 +40,7 @@ h2 {
 }
 
 .navbar .brand {
+<<<<<<< HEAD
     margin-left: 0;
     margin-top: 5px;
 }
@@ -140,6 +141,7 @@ ul.menu li {
 .navbar .nav > li > a.active-trail, 
 .navbar .nav > li.active-trail > a {
     background: #fff;
+    color: #003399;    
 }
 
 .navbar .nav > li > a:hover,
@@ -150,7 +152,7 @@ ul.menu li {
 }
 
 .navbar .nav > li:hover {
-    background: #fff;
+    background: #fff; 
 }
 
 .navbar .nav .active > a, 
@@ -200,7 +202,7 @@ ul.menu li {
     top: 1px;
     width: 23px;
     height: 22px;
-    text-indent: 5000px;
+    text-indent: -9999px;
     margin-top: 0;
 	border-radius: 0 3px 3px 0; 
 	-moz-border-radius: 0 3px 3px 0; 
@@ -299,6 +301,10 @@ input.form-submit:hover {
 	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff7a41', endColorstr='#fe9842'); /* for IE */
 	background: -webkit-gradient(linear, left top, left bottom, from(#ff7a41), to(#fe9842)); /* for webkit browsers */
 	background: -moz-linear-gradient(top,  #ff7a41,  #fe9842); /* for firefox 3.6+ */
+}
+
+#login-buttons .login a.form-submit {
+    height: 22px;
 }
 
 #login-buttons .nav {
@@ -679,6 +685,45 @@ body.node-type-book #breadcrumb-navbar {
     width: 238px;
 }
 
+.home-hero .showcase {
+    position: relative;
+}
+
+.home-hero .showcase > img {
+    position: absolute;
+    bottom: 40px;
+    left: 7px;
+    z-index: 90;
+}
+
+.home-hero .showcase .image-holder {
+    text-align: center;
+    position: relative;
+    z-index: 100;
+    margin-top: 160px;
+    height: 93px;
+}
+
+.home-hero .showcase .first {
+    width: 297px;
+}
+
+.home-hero .showcase .second {
+    width: 358px;
+}
+
+.home-hero .showcase .third {
+    width: 274px;
+}
+
+.home-hero .showcase .image-holder img {
+    display: none;
+}
+
+.referral-hero img {
+    margin: 32px 0 0 52px;
+}
+
 /*
  *  home page column styles
  */
@@ -728,7 +773,7 @@ body.node-type-book #breadcrumb-navbar {
 } 
 
 .referral-column {
-    min-height: 300px;
+    min-height: 260px;
     position: relative;
 } 
 
@@ -782,6 +827,7 @@ body.node-type-book #breadcrumb-navbar {
 
 .view-api-landing-page .item-list li.views-row-first {
     border: 0 none;
+    margin-bottom: 0;
 }
 
 .view-api-landing-page .item-list li.views-row-first h2 {
@@ -979,6 +1025,22 @@ fieldset {
     margin-top: 20px;
 }
 
+.checkbox {
+    padding-left: 10px;
+}
+
+.field-multiple-table label {
+    font-weight: bold;
+}
+
+.field-multiple-table .table {
+    border: 0 none;
+}
+
+.field-multiple-table .table th {
+    background: transparent;
+}
+
 /*
  *  Showcase Styles
  */
@@ -1087,3 +1149,59 @@ fieldset {
     color: #666;
     padding: 5px 0 8px;
 }
+
+/*.btn { margin: 0 5px; }
+
+body.page-forum aside .block, body.page-blogs aside .block {
+  margin: 10px 0 20px 0;
+}
+body.page-forum .span18, body.page-blogs .span18 {
+  width: 670px;
+}
+body.page-forum .span5.pull-right, body.page-blogs .span5.pull-right{
+  width: 250px;
+}
+body.page-forum .region-sidebar-second h2, body.page-blogs .region-sidebar-second h2{
+  border-bottom: 1px dashed #A6A4A6;
+  margin-bottom: 10px;
+}
+
+body.page-blogs #block-sears-custom-blog-login h2 { border-bottom: none; }
+
+body.page-forum aside.span5.pull-right div.views-row, body.page-blogs aside.span5.pull-right div.views-row{
+  background: url("../images/bullet-arrow-blue.gif") no-repeat scroll 0 2px transparent;
+  margin: 7px 0;
+  padding: 0 15px;
+}
+body.page-forum aside.span5.pull-right div.views-row a, body.page-blogs aside.span5.pull-right div.views-row a{
+  color: #979696;
+}
+body.page-forum td.forum-number-topics, body.page-forum td.forum-number-posts, body.page-forum td.views-field.views-field-totalcount, body.page-forum td.views-field.views-field-comment-count {
+  text-align: center;
+  vertical-align: middle;
+}
+
+div.more-link { margin: 15px 0 20px 15px; }
+
+body.page-blogs .view-blog-archive ul { margin: 0; }
+body.page-blogs .view-blog-archive ul li {
+  background: url("../images/bullet-arrow-blue.gif") no-repeat scroll 0 2px transparent;
+  list-style: none outside none;
+  margin: 7px 0;
+  padding: 0 15px;
+}
+#block-sears-custom-forum-login a { 
+  color: #315AA8;
+  font-size: 18px;
+}
+
+.node-blog.node-teaser .node-body, .node-blog.node-teaser h2 { width: 91%; }
+
+body.page-blogs aside.span5.pull-right .view-hot-topics .views-row { 
+  background: none repeat scroll 0 0 transparent;
+  margin: 0;
+  padding: 0;
+}
+body.page-blogs aside.span5.pull-right .view-hot-topics .views-row a { color: #2F5AA8; }
+body.page-blogs aside.span5.pull-right .view-blog-archive li a { color: #979696; } 
+*/

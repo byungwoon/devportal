@@ -34,6 +34,7 @@
                   <li class="first"><?php echo l('My Apps', $user_url . '/apps'); ?></li>
                   <?php endif; ?>
                   <li><?php echo l('Edit Profile', $user_url . '/edit'); ?></li>
+                  <li class="last"><?php echo l('API Console', 'api-console'); ?></li>
                 </ul>
               </li>
               <li><?php echo l(t("logout"), "user/logout"); ?></li>

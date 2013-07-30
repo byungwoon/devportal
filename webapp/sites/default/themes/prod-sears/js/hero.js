@@ -16,6 +16,14 @@ jQuery( document ).ready(function($) {
                     }); 
                 });              
             }
+            
+            if($(this).hasClass('showcase')) {    
+                $('.showcase .first .logo').fadeIn(1000, function() {
+                    $('.showcase .second .logo').fadeIn(1000, function() {
+                        $('.showcase .third .logo').fadeIn(1000);
+                    }); 
+                });              
+            }
        });
     });
     

@@ -17,8 +17,6 @@ regions[footer] = 'Footer'
 
 stylesheets[all][] = css/sears.css
 
-scripts[] = js/NewUtility.js
-scripts[] = js/shcInlineValidation.js
 scripts[] = js/site.js
 scripts[] = js/jquery.cycle.lite.js
 scripts[] = js/hero.js
