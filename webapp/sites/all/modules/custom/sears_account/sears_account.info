@@ -1,0 +1,5 @@
+name = "Sears Account"
+description = "Sears Developer Account customizations"
+package = "Sears"
+core = 7.x
+

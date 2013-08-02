@@ -1,0 +1,8 @@
+filename = "SearsDeveloperNetwork-2013-07-31T15-16-21"
+description = ""
+datestamp = "1375301893"
+generator = "Backup and Migrate (http://drupal.org/project/backup_migrate)"
+generatorversion = "7.x-2.x"
+sites[0][version] = "7.21"
+sites[0][name] = "Sears Developer Network"
+sites[0][url] = "http://portal-localhost:8888/"

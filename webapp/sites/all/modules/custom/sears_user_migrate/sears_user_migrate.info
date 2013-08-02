@@ -1,0 +1,5 @@
+name = "Sears User Migration"
+description = "Provides a Drush task to migrate users and user content"
+core = 7.x
+package = Sears
+version = 7.x-1.x-dev

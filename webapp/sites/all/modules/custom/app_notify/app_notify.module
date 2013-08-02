@@ -1,0 +1,118 @@
+<?php
+/**
+ * @file
+ * Installation file for the app_notify module.
+ */
+/**
+ * Implements hook_help().
+ */
+function app_notify_help($path, $arg) {
+  if ($path == 'admin/help#app_notify') {
+    return '<p>' .
+      t('This module provides a way for an administrator to get' .
+        'an email when a user creates a new app. It also provides a configrable option to notify back to the user  ' .
+        'It assumes that the Drupal mailer is configured.') .
+      '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function app_notify_menu() {
+  $items['admin/config/people/app_notify'] = array(
+    'title' => t('App Notification'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('app_notify_settings'),
+    'description' => 'Configure the App admin notification module.',
+    'file' => 'app_notify.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements devconnect_developer_app_save()
+ */
+function app_notify_devconnect_developer_app_save($results, $form_state) {
+  $result = json_decode($results[raw]);
+  //if appId set assume that application is created and sending the mail
+  if ($result->appId && $results['code']==201) {
+    $app_prod = $result->credentials[0]->apiProducts;
+    $prod = '';
+    if (count($app_prod > 0)) {
+      foreach ($app_prod as $app) {
+        $prod .= "Product Name : ".$form_state['complete form']['api_product']['#options']['prod-'.$app->apiproduct] ."\n";
+        $prod .= "Product Status : " . $app->status . "\n";
+
+      }
+    }
+    $emails = _app_notify_get_receiver_mails();
+    if (empty($emails)) {
+      return;
+    }
+    $to = implode(', ', $emails);
+    if (variable_get('app_notify_user', 0) == 1) {
+      $to .= ", " . $GLOBALS['user']->mail;
+    }
+
+
+    $params = array(
+      'Client Application Name' => $result->name,
+      'Application Approval Status' => $result->status,
+      'API Product Details' => $prod,
+    );
+    drupal_mail(
+      'app_notify',
+      'app-creation-notify',
+      $to,
+      language_default(),
+      $params,
+      variable_get('site_mail', NULL),
+      TRUE // Automatically send
+    );
+
+  }
+
+
+}
+
+/**
+ * Implement hook_mail().
+ */
+function app_notify_mail($key, &$message, $params) {
+  $options = array(
+    'langcode' => $message['language']->language,
+  );
+  switch ($key) {
+    case 'app-creation-notify':
+      global $user;
+      $message['subject'] = t("App details for $user->name ($user->mail) at " . variable_get('site_name', 'Drupal'));
+      $message['body'][] = t("New Application has been created by $user->name ($user->mail) with the following details");
+      $message['body'][] = t("Client Application Name:" . check_plain($params['Client Application Name']));
+      $message['body'][] = t("Application Approval Status:" . check_plain($params['Application Approval Status']));
+      if ($params['API Product Details'] != '') {
+        $message['body'][] = t("API Product Details:\n" . $params['API Product Details']);
+      }
+      break;
+  }
+
+}
+
+/**
+ * Generates the receiver mail addresses.
+ * @return array
+ */
+function  _app_notify_get_receiver_mails() {
+  $emails = explode(',', variable_get('app_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
+  $emails = array_unique($emails);
+  foreach ($emails as $email) {
+    if (valid_email_address($email)) {
+      $valid_emails[] = $email;
+    }
+  }
+  return $valid_emails;
+}
+
+
+

@@ -1,0 +1,7 @@
+;$Id$
+name = App Admin notification
+description = Notifies administrator when new app is created.
+core = 7.x
+package = "Sears"
+files[] = app_notify.module
+files[] = app_notify.admin.inc

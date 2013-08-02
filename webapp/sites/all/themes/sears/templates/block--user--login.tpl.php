@@ -13,5 +13,6 @@
         <input type="hidden" name="form_build_id" value="<?php print $elements['form_build_id']['#value']; ?>" /> 
         <input type="hidden" name="form_id" value="user_login_block" /> 
         <input class="btn form-submit" type="submit" id="edit-submit" name="op" value="Sign in" />
+        <a href="/user/register" class="btn form-submit">Register</a>
     </div>
 </form>

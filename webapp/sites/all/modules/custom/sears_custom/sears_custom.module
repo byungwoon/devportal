@@ -46,10 +46,31 @@ function sears_custom_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case "user_profile_form":
       $form['field_api_key']['#access'] = FALSE;
-    break;
+      break;
     case "user_register_form":
       $form['field_api_key']['#access'] = FALSE;
-    break;
+      break; 
+    case "search_block_form":
+        $form['actions']['submit'] = array(
+            '#type' => 'submit', 
+            '#value' => 'Search',
+            '#prefix' => '<div class="wrap-button">', 
+            '#suffix' => '</div>',            
+        ); 
+        break;
+    case 'user_login_block':
+      $form['#validate'][] = 'user_login_block_redirect';
+      break;   
+    default:
+        break; 
+  }
+}
+
+function user_login_block_redirect($form, &$form_state) {
+  $form = form_get_error($form['name']) . form_get_error($form['pass']);
+  if($form != '') {
+    $_GET['destination'] = 'user/login';
+    drupal_goto('user/login');    
   }
 }
 
@@ -342,11 +363,7 @@ function sears_custom_form_user_register_form_alter(&$form, &$form_state, $form_
       '#weight' => -11
     );    
     
-    $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'http://www.sears.com/cstermsofservice/nb-100000000022530', array(
-        'attributes' => array(
-            'target' => '_blank'
-        ),
-    ));
+    $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'terms-use'    );
     
     $form['actions']['submit']['#value'] = 'Register';
     

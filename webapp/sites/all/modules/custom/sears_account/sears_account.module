@@ -1,0 +1,123 @@
+<?php
+/**
+ * 
+ * Implements hook_form_alter().
+ *
+ * @param array $form,$form_state
+ *
+ */
+
+function sears_account_form_alter (&$form, &$form_state, $form_id) {
+    switch ($form_id) {
+      case 'user_login':
+    	  array_splice($form['#validate'], 2, 0, "user_login_reset_password");
+		  break;
+	  case 'user_profile_form':
+		  $form['account']['name']['#description'] = '';
+		  $form['account']['mail']['#description'] = '';
+		  $form['field_first_name']['#weight'] = 0;
+		  $form['field_last_name']['#weight'] = 0;
+
+		  unset($form['openid']);
+		  unset($form['account']['fboauth']);
+		  unset($form['field_terms_and_conditions']);
+
+		  // Add new simplified user registration and event signups functionality - email verification required
+		  if ($_GET['loginlink'] == 'successful') {
+			drupal_set_title('Create your New Password');
+			$form['field_first_name']['#attributes']['class'][] = 'hide';
+			$form['field_last_name']['#attributes']['class'][] = 'hide';
+			$form['field_company_name']['#attributes']['class'][] = 'hide';
+			$form['field_company_site_url']['#attributes']['class'][] = 'hide';
+			$form['field_contact_phone_number']['#attributes']['class'][] = 'hide';
+			$form['field_application_url']['#attributes']['class'][] = 'hide';						
+
+			$form['account']['current_pass']['#prefix'] = '<div class="hide">';
+			$form['account']['current_pass']['#suffix'] = '</div>';
+
+			$form['account']['name']['#prefix'] = '<div class="hide">';
+			$form['account']['name']['#suffix'] = '</div>';
+			$form['account']['mail']['#prefix'] = '<div class="hide">';
+			$form['account']['mail']['#suffix'] = '</div>';
+
+			$form['account']['pass']['#required'] = true;
+			$form['account']['pass']['#description'] = '';
+
+			$form['#submit'][] = '_sears_account_redirect_first_time';
+		  }
+		  break;
+	}
+	  
+}      
+      
+/**
+ * Implements hook_menu_alter().
+ *
+ * @param $menu
+ */
+function sears_account_menu_alter (&$menu) {
+  // Remove Sites menu from Search Results page.
+  unset($menu['search/site/%']);
+
+  // Ccalls new function user_pass_reset2() in user.pages2.inc
+  // This function is an exact copy of user_pass_reset() function from user.pages.inc in core drupal user module
+  $menu['user/reset/%/%/%']['page arguments'] = array('user_pass_reset2', 2, 3, 4);
+  $menu['user/reset/%/%/%']['file'] = 'user.pages2.inc';
+  $menu['user/reset/%/%/%']['file path'] = drupal_get_path('module', 'sears_account');
+}
+
+/**
+ * Implementation of hook_variable_info
+ */
+function sears_account_variable_info($options) {
+  $variables['password_expiry_from'] = array(
+    'type' => 'string',
+    'title' => t("Password Expiry Date:"),
+    'default' => 'Tue, 11 Jun 2013 13:23:21 GMT',
+    'description' => t('Defines password expiry date. e.g Tue, 11 Jun 2013 13:23:21 GMT')
+  );
+  return $variables;
+}
+
+function user_login_reset_password($form, &$form_state ) {
+  $password = trim($form_state['values']['pass']);
+  if (!empty($form_state['values']['name']) && !empty($password)) {
+	  // validate the expiry of the password	  
+	  $success = user_authenticate($form_state['values']['name'], $form_state['values']['pass']);
+	  if($success) {
+		return true;
+	  } else {
+		$usr = user_load_by_name($form_state['values']['name']);	
+		$password_expired_on = strtotime(variable_get('password_expiry_from','Tue, 11 Jun 2013 13:23:21 GMT'));
+	
+		if($usr->status==1 && ( $usr->login < $password_expired_on ) && $usr->login != 0 ) {
+		  
+		  //drupal_mail('sears_account','password_expiry_reset',$u_usr->mail,user_preferred_language($u_usr),$params);
+		  $result = _user_mail_notify('password_reset', $usr, $language = NULL);
+		  if(!$result) {
+		    watchdog('sears_password_reset', "Unable to send password reset email to expired user $usr->mail." , array(), WATCHDOG_ERROR);
+			drupal_set_message(t("Problem in sending mail.Please request again"), 'error');
+			return false;
+		  } else {
+			drupal_set_title(t('Password Expiry Notification'));
+			drupal_set_message(t("Dear Developer, your password has been expired and you will receive an e-mail to reset your password on your registered e-mail address shortly."), 'status');
+			drupal_goto('password-expiry-notifier');
+		  }
+		} else {
+		  return true;
+		}
+	  }
+	} else {
+	  return true;
+	}
+  
+}
+
+/**
+ * Submit handler for redirecting user on profile form
+ */
+function _sears_account_redirect_first_time($form, &$form_state) {
+  $form_state['redirect'] = 'user/me/apps';
+  drupal_get_messages('');
+  drupal_set_message('Your have successfully reset your password.');
+}
