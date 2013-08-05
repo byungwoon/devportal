@@ -363,7 +363,11 @@ function sears_custom_form_user_register_form_alter(&$form, &$form_state, $form_
       '#weight' => -11
     );    
     
-    $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'terms-use'    );
+    $form['field_terms_and_conditions']['und']['#title'] = l(t("Agree to Terms and Conditions"), 'terms-use', array(
+        'attributes' => array(
+                'target' => '_blank',
+            ),
+    ));
     
     $form['actions']['submit']['#value'] = 'Register';
     
