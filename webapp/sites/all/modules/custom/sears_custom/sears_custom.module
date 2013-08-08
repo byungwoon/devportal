@@ -14,6 +14,8 @@ if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
 if (!defined('DEVCONNECT_ADMIN_NOTIFY_BODY')) {
 	define('DEVCONNECT_ADMIN_NOTIFY_BODY', t("!user_name (!user_view) has !action account.\n\nEdit user: !user_edit\n\nDelete User: !user_delete\n\nUser Status: !approved\n\n"));
 }
+
+
 function sears_custom_variable_info($options) {
   $variables['default_apiproduct'] = array(
     'type' => 'string',
@@ -33,8 +35,9 @@ function sears_custom_init() {
 	'group' => CSS_THEME,
 	'type' => 'inline'
 			));
-  }
+  }  
 }
+
 
 /**
  * Implements hook_form_alter() (http://api.drupal.org/api/drupal/modules!system!system.api.php/function/hook_form_alter/7)
@@ -100,10 +103,10 @@ function sears_custom_form_devconnect_developer_apps_edit_form_alter(&$form, &$f
       $form['machine_name']['#title'] = "Application Name";       
   }
   
-  $form['intro_text'] = array(
-    '#markup' => '<p>Short description answering the following questions: How is application defined? Why is the user creating an Application name? What is the purpose or value of this page?</p><h2>Tell us about your application</h2>',
-    '#weight' => -50
-  );
+  // $form['intro_text'] = array(
+  //   '#markup' => '<p>Short description answering the following questions: How is application defined? Why is the user creating an Application name? What is the purpose or value of this page?</p><h2>Tell us about your application</h2>',
+  //   '#weight' => -50
+  // );
   
   $form['api_product']['#access']=FALSE;
 
